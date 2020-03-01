@@ -1,13 +1,13 @@
 #include "lab3a.h"
-
 #include <unistd.h>
 #include <math.h>
+#include <stdlib.h>
 
 extern struct ext2_super_block super_block;
 extern unsigned int block_size;
 extern int img_fd;
 
-int group_count; /* total number of groups */
+unsigned int group_count; /* total number of groups */
 
 
 unsigned int getBlockOffst(unsigned int block_id) {
@@ -46,14 +46,13 @@ void readGroupDescriptor() {
     struct ext2_group_desc group_desc; /* container of iterated group descriptor */
 
     /* iterate through all group descriptor table entries */
-    int group_desc_id = 0; /* index into the table */
+    unsigned int group_desc_id = 0; /* index into the table */
     for (group_desc_id = 0; group_desc_id < group_count; group_desc_id ++) {
         /* read group table entry */
         pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_desc_id);
 
         /* # of blocks in this group
-         * case1 full
-         * case2 mod
+         * full/mod
          * local to each iteration
          */
         int blocks_in_group = super_block.s_blocks_per_group;
@@ -62,7 +61,7 @@ void readGroupDescriptor() {
         }
 
         /* # of inodes in this group
-         * case1 case 2
+         * full/mod
          * local to iteration
          */
         int inodes_in_group = super_block.s_inodes_per_group;
@@ -91,34 +90,41 @@ void readGroupDescriptor() {
 
 void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
     /* number of blocks in the given group */
-    int total_blocks = super_block.s_blocks_per_group;
-    if (group_id == group_count - 1) {
-        total_blocks = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
+    unsigned int my_block_count = super_block.s_blocks_per_group;
+    if (group_id == (unsigned int) group_count - 1) {
+        my_block_count = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
     }
 
     /* block id of first block of bitmap */
-    int bitmap_block_id = cur_group.bg_block_bitmap;
+    unsigned int bitmap_block_id = cur_group.bg_block_bitmap;
     /* byte offset of first bitmap block*/
-    int bitmap_offset = getBlockOffst(bitmap_block_id);
+    unsigned int bitmap_offset = getBlockOffst(bitmap_block_id);
     /* variable of bitmap, always size 1 block */
     char* bitmap = (char*) malloc(block_size * 1);
     /* read free block bitmap */
     pread(img_fd, bitmap, block_size, bitmap_offset);
 
+    /* first block id in this group */
+    unsigned int first_block_id = super_block.s_first_data_block + super_block.s_blocks_per_group*group_id;
     /* block id each bit corresponds to */
-    int cur_block_id = super_block.s_first_data_block + super_block.s_blocks_per_group*group_id;
-    
-    int byte_id, bit_id; /* indexes to bit map (each byte, each bit) */
+    unsigned int cur_block_id = first_block_id;
+
+    unsigned int byte_id, bit_id; /* indexes to bit map (each byte, each bit) */
     /* loop each byte in the block */
     for (byte_id = 0; byte_id < block_size; byte_id++) {
         char cur_byte = bitmap[byte_id]; /* current byte in bitmap */
         /* loop all 8 bits in the byte */
         for (bit_id = 0; bit_id < 8; bit_id ++) {
             char cur_bit = (cur_byte>>bit_id) & 1; /* current bit in bitmap */
-            if (cur_bit) {
+            if (cur_bit) { /* if allocated */
                 printf("BFREE,%d", cur_block_id);
             }
             cur_block_id ++;
+
+            /* if have already processed all blocks in this group */
+            /* TODO: is this necessary? */
+            if (cur_block_id >= first_block_id + my_block_count - 1)
+                break;
         }
     }
 
@@ -127,17 +133,17 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
 
 
 void readDirectories(unsigned int parent_inode, unsigned int block_id) {
-    int my_block_offset = getBlockOffst(block_id);
+    int my_offset = getBlockOffst(block_id); /* offset of current entry */
     
     /* read directory entry without name section */
     struct dir_entry_no_name nameless_entry; /* nameless entry structure (for finding name length) */
-    pread(img_fd, &nameless_entry, 8, my_block_offset);
+    pread(img_fd, &nameless_entry, 8, my_offset);
 
     int my_full_length = 8 + nameless_entry.name_len; /* full length of current directory entry */
 
     /* read full directory entry */
     struct ext2_dir_entry my_dir_entry; /* current directory entry */
-    pread(img_fd, &my_dir_entry, 8, my_block_offset);
+    pread(img_fd, &my_dir_entry, 8, my_offset);
 
     /* print information */
     printf("DIRENT,%d,%d,%d,%d,%d,'%s'\n",
