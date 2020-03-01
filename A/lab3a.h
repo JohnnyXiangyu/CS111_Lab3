@@ -15,6 +15,6 @@ void readSuperBlock();
 void readGroupDescriptor();
 
 /* process inode table, output inodes' information, inode summary, file types and indirect blocks' info  */
-void readInodeInfo(struct ext2_group_desc cur_group);
+void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group);
 /* process block bitmat, output free block information */
-void readBlockInfo(struct ext2_group_desc cur_group);
+void readBlockInfo(unsigned int group_num, struct ext2_group_desc cur_group);
