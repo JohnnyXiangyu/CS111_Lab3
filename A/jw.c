@@ -9,13 +9,16 @@ extern int img_fd;
 
 int group_count; /* total number of groups */
 
+
 unsigned int getBlockOffst(unsigned int block_id) {
     return SUPERBLOCK_OFFSET + (block_id - 1) * block_size;
 }
 
+
 void getBlockSize() {
     block_size= 1024 << super_block.s_log_block_size;
 }
+
 
 void readSuperBlock() {
     /* read super block into global structure */
@@ -33,6 +36,7 @@ void readSuperBlock() {
         super_block.s_first_ino
     );    
 }
+
 
 void readGroupDescriptor() {
     group_count = ceil(super_block.s_blocks_count / super_block.s_blocks_per_group);
@@ -84,6 +88,7 @@ void readGroupDescriptor() {
     }
 }
 
+
 void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
     /* number of blocks in the given group */
     int total_blocks = super_block.s_blocks_per_group;
@@ -116,4 +121,31 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
             cur_block_id ++;
         }
     }
+
+    free(bitmap);
+}
+
+
+void readDirectories(unsigned int parent_inode, unsigned int block_id) {
+    int my_block_offset = getBlockOffst(block_id);
+    
+    /* read directory entry without name section */
+    struct dir_entry_no_name nameless_entry; /* nameless entry structure (for finding name length) */
+    pread(img_fd, &nameless_entry, 8, my_block_offset);
+
+    int my_full_length = 8 + nameless_entry.name_len; /* full length of current directory entry */
+
+    /* read full directory entry */
+    struct ext2_dir_entry my_dir_entry; /* current directory entry */
+    pread(img_fd, &my_dir_entry, 8, my_block_offset);
+
+    /* print information */
+    printf("DIRENT,%d,%d,%d,%d,%d,'%s'\n",
+           parent_inode, // parent inode number
+           block_id, // logical byte offset of this entry within the directory
+           my_dir_entry.inode, // inode number of the referenced file
+           my_full_length, // entry length
+           my_dir_entry.name_len, // name length
+           my_dir_entry.name // name (string, surrounded by single-quotes)
+    );
 }
