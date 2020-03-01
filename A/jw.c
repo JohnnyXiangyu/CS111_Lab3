@@ -84,9 +84,36 @@ void readGroupDescriptor() {
     }
 }
 
-void readBlockInfo(unsigned int group_num, struct ext2_group_desc cur_group) {
-    int total_blocks = super_block.s_blocks_per_group; /* total blocks */
-    if (group_num == group_count - 1) {
+void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
+    /* number of blocks in the given group */
+    int total_blocks = super_block.s_blocks_per_group;
+    if (group_id == group_count - 1) {
         total_blocks = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
+    }
+
+    /* block id of first block of bitmap */
+    int bitmap_block_id = cur_group.bg_block_bitmap;
+    /* byte offset of first bitmap block*/
+    int bitmap_offset = getBlockOffst(bitmap_block_id);
+    /* variable of bitmap, always size 1 block */
+    char* bitmap = (char*) malloc(block_size * 1);
+    /* read free block bitmap */
+    pread(img_fd, bitmap, block_size, bitmap_offset);
+
+    /* block id each bit corresponds to */
+    int cur_block_id = super_block.s_first_data_block + super_block.s_blocks_per_group*group_id;
+    
+    int byte_id, bit_id; /* indexes to bit map (each byte, each bit) */
+    /* loop each byte in the block */
+    for (byte_id = 0; byte_id < block_size; byte_id++) {
+        char cur_byte = bitmap[byte_id]; /* current byte in bitmap */
+        /* loop all 8 bits in the byte */
+        for (bit_id = 0; bit_id < 8; bit_id ++) {
+            char cur_bit = (cur_byte>>bit_id) & 1; /* current bit in bitmap */
+            if (cur_bit) {
+                printf("BFREE,%d", cur_block_id);
+            }
+            cur_block_id ++;
+        }
     }
 }
