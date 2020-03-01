@@ -1,5 +1,4 @@
 #include "lab3a.h"
-#include "ext2_fs.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -23,7 +22,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     struct ext2_inode inode;
 
-    pread(img_fd, inode, super_block.s_inode_size, offset);
+    pread(img_fd, &inode, super_block.s_inode_size, offset);
 
     int is_link = inode.i_mode & EXT2_S_IFLNK;
     int is_reg = inode.i_mode & EXT2_S_IFREG;
@@ -73,11 +72,11 @@ void readInodeInfo(unsigned int group_num,struct ext2_group_desc cur_group) {
     //need an extra group_num here
 
     unsigned int bitmap_id = cur_group.bg_inode_bitmap;
-    unsigned int table_id = cur_group.bg_inotde_table;
+    unsigned int table_id = cur_group.bg_inode_table;
     unsigned int offset = getBlockOffst(bitmap_id);
 
     int map_size = super_block.s_inodes_per_group / 8;
-    char* map = calloc(map_size * sizeof(char));
+    char* map = malloc(map_size * sizeof(char));
 
     pread(img_fd, map, map_size, offset);
 
