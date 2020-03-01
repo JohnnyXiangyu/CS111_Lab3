@@ -67,7 +67,7 @@ void readGroupDescriptor() {
         }
 
         /* print group table entry info */
-        printf("GROUP,%d,%d,%d,%d,%d,%d,%d,%d",
+        printf("GROUP,%d,%d,%d,%d,%d,%d,%d,%d\n",
             group_desc_id, // group number (decimal, starting from zero)
             blocks_in_group, // total number of blocks in this group (decimal)
             inodes_in_group, // total number of i-nodes in this group (decimal)
@@ -85,5 +85,8 @@ void readGroupDescriptor() {
 }
 
 void readBlockInfo(unsigned int group_num, struct ext2_group_desc cur_group) {
-
+    int total_blocks = super_block.s_blocks_per_group; /* total blocks */
+    if (group_num == group_count - 1) {
+        total_blocks = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
+    }
 }
