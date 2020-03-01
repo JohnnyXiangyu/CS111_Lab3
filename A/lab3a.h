@@ -18,3 +18,7 @@ void readGroupDescriptor();
 void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group);
 /* process block bitmat, output free block information */
 void readBlockInfo(unsigned int group_num, struct ext2_group_desc cur_group);
+
+/* process each dir_entry, output dir's parent inode number, logical byte offset, inode num 
+of referenced file, entry length, name length and name*/
+void readDirectories(unsigned int parent_inode, unsigned int block_id);
