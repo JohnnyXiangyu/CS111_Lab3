@@ -62,14 +62,14 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     char atime[20];
     strftime(atime, 20, "%m/%d/%Y %H:%M:%S", gmt_atime);
 
-    
+
 
 
 
 }
 
 
-void readInodeInfo(struct ext2_group_desc cur_group) {
+void readInodeInfo(unsigned int group_num,struct ext2_group_desc cur_group) {
     //need an extra group_num here
 
     unsigned int bitmap_id = cur_group.bg_inode_bitmap;
