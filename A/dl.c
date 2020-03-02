@@ -12,9 +12,36 @@ extern struct ext2_super_block super_block;
 extern unsigned int block_size;
 extern int img_fd;
 
+void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsigned int inode_number, unsigned int is_dir){
+    unsigned int offset = getBlockOffst(indirect_table_id);
+    unsigned int table_size = block_size / sizeof(__u32);
+    unsigned int *ids = malloc(sizeof(__u32) * table_size);
+    pread(img_fd, ids, block_size, offset);
+
+    unsigned int i;
+    for(i = 0; i < table_size; i++){
+        if( ids[i] != 0 ){
+            if(is_dir && level == 1){
+                readDirectories(inode_number, ids[i]);
+            }
+            unsigned int logical_offset = level * i;
+            printf("INDIRECT,%d,%d,%d,%d,%d\n",inode_number,level,logical_offset,indirect_table_id,ids[i]);
+
+        }
+    }
+    if(level != 1){
+        for(i = 0; i < table_size; i++){         
+                readIndirectInfo(ids[i], level-1, inode_number, is_dir);
+        }
+    }
+
+
+}
+
+
 void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned int table_index)
 {
-    prinf("INODE,%d,", inode_number);
+    printf("INODE,%d,", inode_number);
 
     unsigned int offset = getBlockOffst(inode_table) + (table_index - 1) * super_block.s_inode_size;
 
@@ -67,10 +94,10 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     unsigned int block_num = inode.i_blocks;
 
     printf("%o,%d,%d,%d,%s,%s,%s,%d,%d", mode, owner, group, link_count, ctime, mtime, atime, file_size, block_num);
-
+    int k;
     if (!is_link || (file_size < 60))
     {
-        int k;
+        
         for (k = 0; k < 15; k++)
         {
             printf(",%d", inode.i_block[k]);
@@ -82,7 +109,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     }
     printf("\n");
 
-    if (is_idr)
+    if (is_dir)
     {
         for (k = 0; k < 12; k++)
         {
@@ -91,6 +118,22 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
                 readDirectories(inode_number, inode.i_block[k]);
             }
         }
+        return;
+    }
+    
+    if( !is_link ){
+        unsigned int first_indir = inode.i_block[12];
+        if(first_indir != 0){
+            readIndirectInfo(first_indir, 1, inode_number, is_dir);
+        }
+        unsigned int second_indir = inode.i_block[13];
+        if(second_indir != 0){
+            readIndirectInfo(second_indir, 2, inode_number, is_dir);
+        }
+        unsigned int third_indir = inode.i_block[14];
+        if(third_indir != 0){
+            readIndirectInfo(third_indir, 3, inode_number, is_dir);
+        }        
     }
 }
 
