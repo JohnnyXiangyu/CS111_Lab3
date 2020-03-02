@@ -1,21 +1,26 @@
 #include "lab3a.h"
-
 #include <unistd.h>
 #include <math.h>
+#include <stdlib.h>
 
 extern struct ext2_super_block super_block;
 extern unsigned int block_size;
 extern int img_fd;
 
-int group_count; /* total number of groups */
+extern int dir_logic_offset;
+
+unsigned int group_count; /* total number of groups */
+
 
 unsigned int getBlockOffst(unsigned int block_id) {
     return SUPERBLOCK_OFFSET + (block_id - 1) * block_size;
 }
 
+
 void getBlockSize() {
     block_size= 1024 << super_block.s_log_block_size;
 }
+
 
 void readSuperBlock() {
     /* read super block into global structure */
@@ -34,6 +39,7 @@ void readSuperBlock() {
     );    
 }
 
+
 void readGroupDescriptor() {
     group_count = ceil(super_block.s_blocks_count / super_block.s_blocks_per_group);
     
@@ -42,14 +48,13 @@ void readGroupDescriptor() {
     struct ext2_group_desc group_desc; /* container of iterated group descriptor */
 
     /* iterate through all group descriptor table entries */
-    int group_desc_id = 0; /* index into the table */
+    unsigned int group_desc_id = 0; /* index into the table */
     for (group_desc_id = 0; group_desc_id < group_count; group_desc_id ++) {
         /* read group table entry */
         pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_desc_id);
 
         /* # of blocks in this group
-         * case1 full
-         * case2 mod
+         * full/mod
          * local to each iteration
          */
         int blocks_in_group = super_block.s_blocks_per_group;
@@ -58,7 +63,7 @@ void readGroupDescriptor() {
         }
 
         /* # of inodes in this group
-         * case1 case 2
+         * full/mod
          * local to iteration
          */
         int inodes_in_group = super_block.s_inodes_per_group;
@@ -84,9 +89,75 @@ void readGroupDescriptor() {
     }
 }
 
-void readBlockInfo(unsigned int group_num, struct ext2_group_desc cur_group) {
-    int total_blocks = super_block.s_blocks_per_group; /* total blocks */
-    if (group_num == group_count - 1) {
-        total_blocks = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
+
+void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
+    /* number of blocks in the given group */
+    unsigned int my_block_count = super_block.s_blocks_per_group;
+    if (group_id == (unsigned int) group_count - 1) {
+        my_block_count = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
+    }
+
+    /* block id of first block of bitmap */
+    unsigned int bitmap_block_id = cur_group.bg_block_bitmap;
+    /* byte offset of first bitmap block*/
+    unsigned int bitmap_offset = getBlockOffst(bitmap_block_id);
+    /* variable of bitmap, always size 1 block */
+    char* bitmap = (char*) malloc(block_size * 1);
+    /* read free block bitmap */
+    pread(img_fd, bitmap, block_size, bitmap_offset);
+
+    /* first block id in this group */
+    unsigned int first_block_id = super_block.s_first_data_block + super_block.s_blocks_per_group*group_id;
+    /* block id each bit corresponds to */
+    unsigned int cur_block_id = first_block_id;
+
+    unsigned int byte_id, bit_id; /* indexes to bit map (each byte, each bit) */
+    /* loop each byte in the block */
+    for (byte_id = 0; byte_id < block_size; byte_id++) {
+        char cur_byte = bitmap[byte_id]; /* current byte in bitmap */
+        /* loop all 8 bits in the byte */
+        for (bit_id = 0; bit_id < 8; bit_id ++) {
+            char cur_bit = (cur_byte>>bit_id) & 1; /* current bit in bitmap */
+            if (cur_bit) { /* if allocated */
+                printf("BFREE,%d", cur_block_id);
+            }
+            cur_block_id ++;
+
+            /* if have already processed all blocks in this group */
+            /* TODO: is this necessary? */
+            if (cur_block_id >= first_block_id + my_block_count - 1)
+                break;
+        }
+    }
+
+    free(bitmap);
+}
+
+
+void readDirectories(unsigned int parent_inode, unsigned int block_id) {
+    int my_actual_offset = getBlockOffst(block_id); /* first byte of this block */
+
+    /* loop linked list of directory entries */
+    unsigned int cur_offset = 0; /* temporary offset to entry (in this block) */
+    for (cur_offset = 0; cur_offset - my_actual_offset < block_size;) {
+        /* read directory entry without name section */
+        struct ext2_dir_entry cur_entry; /* entry in this iteration */
+        pread(img_fd, &cur_entry, sizeof(struct ext2_dir_entry), my_actual_offset + cur_offset);
+
+        if (cur_entry.inode != 0) {
+            unsigned int my_full_length = cur_entry.rec_len; 
+            /* print information */
+            printf("DIRENT,%d,%d,%d,%d,%d,'%s'\n",
+                parent_inode, // parent inode number
+                dir_logic_offset, // logical byte offset of this entry within the directory
+                cur_entry.inode, // inode number of the referenced file
+                my_full_length, // entry length
+                cur_entry.name_len, // name length
+                cur_entry.name // name (string, surrounded by single-quotes)
+            );
+        }
+
+        cur_offset += cur_entry.rec_len;
+        dir_logic_offset += cur_entry.rec_len;
     }
 }
