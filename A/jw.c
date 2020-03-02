@@ -7,6 +7,8 @@ extern struct ext2_super_block super_block;
 extern unsigned int block_size;
 extern int img_fd;
 
+extern int dir_logic_offset;
+
 unsigned int group_count; /* total number of groups */
 
 
@@ -133,25 +135,29 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
 
 
 void readDirectories(unsigned int parent_inode, unsigned int block_id) {
-    int my_offset = getBlockOffst(block_id); /* offset of current entry */
-    
-    /* read directory entry without name section */
-    struct dir_entry_no_name nameless_entry; /* nameless entry structure (for finding name length) */
-    pread(img_fd, &nameless_entry, 8, my_offset);
+    int my_actual_offset = getBlockOffst(block_id); /* first byte of this block */
 
-    int my_full_length = 8 + nameless_entry.name_len; /* full length of current directory entry */
+    /* loop linked list of directory entries */
+    unsigned int cur_offset = 0; /* temporary offset to entry (in this block) */
+    for (cur_offset = 0; cur_offset - my_actual_offset < block_size;) {
+        /* read directory entry without name section */
+        struct ext2_dir_entry cur_entry; /* entry in this iteration */
+        pread(img_fd, &cur_entry, 8+255, my_actual_offset + cur_offset);
 
-    /* read full directory entry */
-    struct ext2_dir_entry my_dir_entry; /* current directory entry */
-    pread(img_fd, &my_dir_entry, 8, my_offset);
+        if (cur_entry.inode != 0) {
+            unsigned int my_full_length = cur_entry.rec_len; 
+            /* print information */
+            printf("DIRENT,%d,%d,%d,%d,%d,'%s'\n",
+                parent_inode, // parent inode number
+                dir_logic_offset, // logical byte offset of this entry within the directory
+                cur_entry.inode, // inode number of the referenced file
+                my_full_length, // entry length
+                cur_entry.name_len, // name length
+                cur_entry.name // name (string, surrounded by single-quotes)
+            );
+        }
 
-    /* print information */
-    printf("DIRENT,%d,%d,%d,%d,%d,'%s'\n",
-           parent_inode, // parent inode number
-           block_id, // logical byte offset of this entry within the directory
-           my_dir_entry.inode, // inode number of the referenced file
-           my_full_length, // entry length
-           my_dir_entry.name_len, // name length
-           my_dir_entry.name // name (string, surrounded by single-quotes)
-    );
+        cur_offset += cur_entry.rec_len;
+        dir_logic_offset += cur_entry.rec_len;
+    }
 }
