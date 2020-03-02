@@ -3,4 +3,5 @@ ID
 EMAIL
 
 Notes:
+    getBlockSize() is called in superblock processing routine
     

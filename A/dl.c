@@ -11,6 +11,8 @@
 extern struct ext2_super_block super_block;
 extern unsigned int block_size;
 extern int img_fd;
+unsigned int dir_logic_offset = 0; /* logical, cross-block byte offset of directory entries in a directory inode */
+
 
 void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsigned int inode_number, unsigned int is_dir){
     unsigned int offset = getBlockOffst(indirect_table_id);
@@ -37,6 +39,8 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
 
 
 }
+
+//unsigned int dir_logic_offset = 0; /* logical, cross-block byte offset of directory entries in a directory inode */
 
 
 void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned int table_index)
@@ -111,6 +115,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     if (is_dir)
     {
+        dir_logic_offset = 0; /* initialize logical offset for a new inode to be 0 */
         for (k = 0; k < 12; k++)
         {
             if (inode.i_block[k] != 0)
