@@ -142,7 +142,7 @@ void readDirectories(unsigned int parent_inode, unsigned int block_id) {
     for (cur_offset = 0; cur_offset - my_actual_offset < block_size;) {
         /* read directory entry without name section */
         struct ext2_dir_entry cur_entry; /* entry in this iteration */
-        pread(img_fd, &cur_entry, 8+255, my_actual_offset + cur_offset);
+        pread(img_fd, &cur_entry, sizeof(struct ext2_dir_entry), my_actual_offset + cur_offset);
 
         if (cur_entry.inode != 0) {
             unsigned int my_full_length = cur_entry.rec_len; 
