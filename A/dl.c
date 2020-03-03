@@ -46,13 +46,17 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
 
 void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned int table_index)
 {
-    printf("INODE,%d,", inode_number);
+
 
     unsigned int offset = getBlockOffst(inode_table) + (table_index - 1) * super_block.s_inode_size;
 
     struct ext2_inode inode;
 
     pread(img_fd, &inode, super_block.s_inode_size, offset);
+
+    if(inode.i_mode == 0 || inode.i_links_count == 0){
+        return;
+    }
 
     unsigned int mode = 0xFFF & inode.i_mode;
 
@@ -62,6 +66,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     unsigned int is_dir = 0;
     unsigned int is_reg = 0;
     unsigned int is_link = 0;
+    printf("INODE,%d,", inode_number);
 
     if (file_mode == EXT2_S_IFLNK)
     {
