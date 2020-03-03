@@ -149,7 +149,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
         }
         unsigned int third_indir = inode.i_block[14];
         if(third_indir != 0){
-            readIndirectInfo(third_indir, 3, inode_number, is_dir, 65532+256+12);
+            readIndirectInfo(third_indir, 3, inode_number, is_dir, 65536+256+12);
         }        
     }
 }
