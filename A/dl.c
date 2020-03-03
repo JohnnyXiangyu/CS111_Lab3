@@ -14,7 +14,7 @@ extern int img_fd;
 unsigned int dir_logic_offset = 0; /* logical, cross-block byte offset of directory entries in a directory inode */
 
 
-void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsigned int inode_number, unsigned int is_dir){
+void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsigned int inode_number, unsigned int is_dir, unsigned int logical_offset){
     unsigned int offset = getBlockOffst(indirect_table_id);
     unsigned int table_size = block_size / sizeof(__u32);
     unsigned int *ids = malloc(sizeof(__u32) * table_size);
@@ -26,14 +26,14 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
             if(is_dir && level == 1){
                 readDirectories(inode_number, ids[i]);
             }
-            unsigned int logical_offset = level * i;
-            printf("INDIRECT,%d,%d,%d,%d,%d\n",inode_number,level,logical_offset,indirect_table_id,ids[i]);
+            unsigned int l_offset = level * i + logical_offset;
+            printf("INDIRECT,%d,%d,%d,%d,%d\n",inode_number,level,l_offset,indirect_table_id,ids[i]);
 
         }
     }
     if(level != 1){
         for(i = 0; i < table_size; i++){         
-                readIndirectInfo(ids[i], level-1, inode_number, is_dir);
+                readIndirectInfo(ids[i], level-1, inode_number, is_dir, logical_offset);
         }
     }
 
@@ -141,15 +141,15 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     if( !is_link ){
         unsigned int first_indir = inode.i_block[12];
         if(first_indir != 0){
-            readIndirectInfo(first_indir, 1, inode_number, is_dir);
+            readIndirectInfo(first_indir, 1, inode_number, is_dir, 12);
         }
         unsigned int second_indir = inode.i_block[13];
         if(second_indir != 0){
-            readIndirectInfo(second_indir, 2, inode_number, is_dir);
+            readIndirectInfo(second_indir, 2, inode_number, is_dir, 256+12);
         }
         unsigned int third_indir = inode.i_block[14];
         if(third_indir != 0){
-            readIndirectInfo(third_indir, 3, inode_number, is_dir);
+            readIndirectInfo(third_indir, 3, inode_number, is_dir, 65536+256+12);
         }        
     }
 }
@@ -170,11 +170,11 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
 
     
 
-    int mask = 0x1;
+
     int i;
     for (i = 0; i < map_size; i++)
     {
-
+        int mask = 0x1;
         char cur = map[i];
 //        unsigned int map_test = (unsigned int) cur;
 //        printf("bitmap: %x\n", map_test);
@@ -194,7 +194,7 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
             {
                 printf("IFREE,%d\n", inode_index);
             }
-            mask = mask << 1;
+//            mask = mask << 1;
         }
     }
 
