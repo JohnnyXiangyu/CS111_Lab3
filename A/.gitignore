@@ -4,3 +4,5 @@
 *.csv
 fs/
 *.log
+*.diff
+lab3a
