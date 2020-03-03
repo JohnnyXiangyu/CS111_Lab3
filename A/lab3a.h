@@ -53,3 +53,6 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group);
  * called ONLY in readInodeInfo()
  */
 void readDirectories(unsigned int parent_inode, unsigned int block_id);
+
+/* wrapper function for pread(), with same param and return value */
+void m_pread (int __fd, void *__buf, size_t __nbytes, __off_t __offset);
