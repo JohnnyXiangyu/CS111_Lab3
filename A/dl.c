@@ -157,10 +157,10 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
     unsigned int offset = getBlockOffst(bitmap_id);
 
     int map_size = super_block.s_inodes_per_group / 8; //each byte is 8
-    char *map = malloc(map_size * sizeof(char));
+    char *map = (char *) malloc(block_size * sizeof(char));
 
 
-    pread(img_fd, map, map_size, offset);
+    pread(img_fd, map, block_size, offset);
 
     
 
