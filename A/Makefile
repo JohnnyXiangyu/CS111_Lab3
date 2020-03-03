@@ -11,3 +11,11 @@ t_test: lab3a trivial.img trivial_s.csv
 	sort test.csv > test_s.csv 
 	diff -u test_s.csv trivial_s.csv > trivial.diff
 	rm -f test.csv
+
+clean:
+	rm -f lab3a 
+	rm -f *.tar.gz
+
+dclean:
+	rm -f *.csv 
+	rm -f *.diff 
