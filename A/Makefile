@@ -9,7 +9,7 @@ lab3a: lab3a.c lab3a.h ext2_fs.h jw.c dl.c
 t_test: lab3a trivial.img trivial_s.csv
 	./lab3a trivial.img > test.csv
 	sort test.csv > test_s.csv 
-	diff -u test_s.csv trivial_s.csv > trivial.diff
+	-diff -u test_s.csv trivial_s.csv > trivial.diff
 	rm -f test.csv
 
 clean:
@@ -17,5 +17,5 @@ clean:
 	rm -f *.tar.gz
 
 dclean:
-	rm -f *.csv 
+	rm -f test_s.csv 
 	rm -f *.diff 
