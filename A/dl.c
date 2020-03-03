@@ -114,7 +114,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     printf("%o,%d,%d,%d,%s,%s,%s,%d,%d", mode, owner, group, link_count, ctime, mtime, atime, file_size, block_num);
     int k;
-    if (is_reg || is_dir)
+    if (is_reg || is_dir || (is_link && (file_size > 60)))
     {
         
         for (k = 0; k < 15; k++)
@@ -176,7 +176,7 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
     {
 
         char cur = map[i];
-        unsigned int map_test = (unsigned int) cur;
+//        unsigned int map_test = (unsigned int) cur;
 //        printf("bitmap: %x\n", map_test);
         int j;
         for (j = 0; j < 8; j++)
