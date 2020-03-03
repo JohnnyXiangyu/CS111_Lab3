@@ -24,7 +24,7 @@ void getBlockSize() {
 
 void readSuperBlock() {
     /* read super block into global structure */
-    pread(img_fd, &super_block, block_size, SUPERBLOCK_OFFSET);
+    pread(img_fd, &super_block, 1024, SUPERBLOCK_OFFSET);
     getBlockSize();
 
     /* print super block summary */
@@ -41,24 +41,24 @@ void readSuperBlock() {
 
 
 void readGroupDescriptor() {
-    group_count = ceil(super_block.s_blocks_count / super_block.s_blocks_per_group);
+    group_count = ceil((float) super_block.s_blocks_count / (float) super_block.s_blocks_per_group);
     
     int group_tab_offset = SUPERBLOCK_OFFSET + block_size; /* first group descriptor offset (from super block) */
 
     struct ext2_group_desc group_desc; /* container of iterated group descriptor */
 
     /* iterate through all group descriptor table entries */
-    unsigned int group_desc_id = 0; /* index into the table */
-    for (group_desc_id = 0; group_desc_id < group_count; group_desc_id ++) {
+    unsigned int group_id = 0; /* index into the table */
+    for (group_id = 0; group_id < group_count; group_id ++) {
         /* read group table entry */
-        pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_desc_id);
+        pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_id);
 
         /* # of blocks in this group
          * full/mod
          * local to each iteration
          */
         int blocks_in_group = super_block.s_blocks_per_group;
-        if (group_desc_id == group_count - 1) {
+        if (group_id == group_count - 1) {
             blocks_in_group = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
         }
 
@@ -67,13 +67,13 @@ void readGroupDescriptor() {
          * local to iteration
          */
         int inodes_in_group = super_block.s_inodes_per_group;
-        if (group_desc_id == group_count - 1) {
-            blocks_in_group = super_block.s_inodes_count - (group_count-1) * super_block.s_inodes_per_group;
+        if (group_id == group_count - 1) {
+            inodes_in_group = super_block.s_inodes_count - (group_count-1) * super_block.s_inodes_per_group;
         }
 
         /* print group table entry info */
         printf("GROUP,%d,%d,%d,%d,%d,%d,%d,%d\n",
-            group_desc_id, // group number (decimal, starting from zero)
+            group_id, // group number (decimal, starting from zero)
             blocks_in_group, // total number of blocks in this group (decimal)
             inodes_in_group, // total number of i-nodes in this group (decimal)
             group_desc.bg_free_blocks_count, // number of free blocks (decimal)
@@ -84,8 +84,8 @@ void readGroupDescriptor() {
         );
 
         /* process inodes */
-        readInodeInfo(group_desc_id, group_desc);
-        readBlockInfo(group_desc_id, group_desc);
+        readInodeInfo(group_id, group_desc);
+        readBlockInfo(group_id, group_desc);
     }
 }
 
@@ -118,8 +118,8 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
         /* loop all 8 bits in the byte */
         for (bit_id = 0; bit_id < 8; bit_id ++) {
             char cur_bit = (cur_byte>>bit_id) & 1; /* current bit in bitmap */
-            if (cur_bit) { /* if allocated */
-                printf("BFREE,%d", cur_block_id);
+            if (!cur_bit) { /* if allocated */
+                printf("BFREE,%d\n", cur_block_id);
             }
             cur_block_id ++;
 
@@ -139,7 +139,7 @@ void readDirectories(unsigned int parent_inode, unsigned int block_id) {
 
     /* loop linked list of directory entries */
     unsigned int cur_offset = 0; /* temporary offset to entry (in this block) */
-    for (cur_offset = 0; cur_offset - my_actual_offset < block_size;) {
+    for (cur_offset = 0; cur_offset < block_size;) {
         /* read directory entry without name section */
         struct ext2_dir_entry cur_entry; /* entry in this iteration */
         pread(img_fd, &cur_entry, sizeof(struct ext2_dir_entry), my_actual_offset + cur_offset);

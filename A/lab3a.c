@@ -30,8 +30,9 @@ int m_open(const char *__file, int __oflag) {
 
 int main(int argc, char** argv) {
     /* open image file */
-    if (argc != 2)
+    if (argc != 2) {
         fprintf(stderr, "%s", error_message);
+    }
     else {
         img_fd = m_open(argv[1], O_RDONLY);
     }
