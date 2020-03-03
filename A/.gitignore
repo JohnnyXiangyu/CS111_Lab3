@@ -7,3 +7,4 @@ fs/
 *.diff
 lab3a
 !trivial_s.csv 
+!trivial.img 
