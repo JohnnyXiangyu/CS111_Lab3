@@ -6,3 +6,4 @@ fs/
 *.log
 *.diff
 lab3a
+!trivial_s.csv 
