@@ -37,6 +37,7 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
         }
     }
 
+    free(ids);
 
 }
 
@@ -45,13 +46,17 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
 
 void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned int table_index)
 {
-    printf("INODE,%d,", inode_number);
+
 
     unsigned int offset = getBlockOffst(inode_table) + (table_index - 1) * super_block.s_inode_size;
 
     struct ext2_inode inode;
 
     pread(img_fd, &inode, super_block.s_inode_size, offset);
+
+    if(inode.i_mode == 0 || inode.i_links_count == 0){
+        return;
+    }
 
     unsigned int mode = 0xFFF & inode.i_mode;
 
@@ -61,6 +66,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     unsigned int is_dir = 0;
     unsigned int is_reg = 0;
     unsigned int is_link = 0;
+    printf("INODE,%d,", inode_number);
 
     if (file_mode == EXT2_S_IFLNK)
     {
@@ -108,7 +114,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     printf("%o,%d,%d,%d,%s,%s,%s,%d,%d", mode, owner, group, link_count, ctime, mtime, atime, file_size, block_num);
     int k;
-    if (is_reg || is_dir)
+    if (is_reg || is_dir || (is_link && (file_size > 60)))
     {
         
         for (k = 0; k < 15; k++)
@@ -170,7 +176,7 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
     {
 
         char cur = map[i];
-        unsigned int map_test = (unsigned int) cur;
+//        unsigned int map_test = (unsigned int) cur;
 //        printf("bitmap: %x\n", map_test);
         int j;
         for (j = 0; j < 8; j++)
@@ -191,4 +197,6 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
             mask = mask << 1;
         }
     }
+
+    free(map);
 }
