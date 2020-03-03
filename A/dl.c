@@ -37,6 +37,7 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
         }
     }
 
+    free(ids);
 
 }
 
@@ -191,4 +192,6 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
             mask = mask << 1;
         }
     }
+
+    free(map);
 }
