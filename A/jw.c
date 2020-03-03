@@ -14,6 +14,7 @@ unsigned int group_count; /* total number of groups */
 
 unsigned int getBlockOffst(unsigned int block_id) {
     return SUPERBLOCK_OFFSET + (block_id - 1) * block_size;
+    /* TODO: SUPERBLOCK MIGHT BE BLOCK 0 */
 }
 
 
