@@ -53,28 +53,37 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     pread(img_fd, &inode, super_block.s_inode_size, offset);
 
-    int is_link = inode.i_mode & EXT2_S_IFLNK;
-    int is_reg = inode.i_mode & EXT2_S_IFREG;
-    int is_dir = inode.i_mode & EXT2_S_IFDIR;
+    unsigned int mode = 0xFFF & inode.i_mode;
 
-    if (is_link)
+    unsigned int file_mode = inode.i_mode & 0xF000;
+
+
+    unsigned int is_dir = 0;
+    unsigned int is_reg = 0;
+    unsigned int is_link = 0;
+
+    if (file_mode == EXT2_S_IFLNK)
     {
         printf("s,");
+        is_link = 1;
     }
-    else if (is_reg)
+    else if (file_mode == EXT2_S_IFREG)
     {
         printf("f,");
+        is_reg = 1;
     }
-    else if (is_dir)
+    else if (file_mode == EXT2_S_IFDIR)
     {
         printf("d,");
+        is_dir = 1;
     }
+
     else
     {
         printf("?,");
     }
 
-    unsigned int mode = 0xFFFF & inode.i_mode;
+
     unsigned int owner = inode.i_uid;
     unsigned int group = inode.i_gid;
     unsigned int link_count = inode.i_links_count;
@@ -82,24 +91,24 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
     time_t inode_ctime = inode.i_ctime;
     struct tm *gmt_ctime = gmtime(&inode_ctime);
     char ctime[20];
-    strftime(ctime, 20, "%m/%d/%Y %H:%M:%S", gmt_ctime);
+    strftime(ctime, 20, "%m/%d/%y %H:%M:%S", gmt_ctime);
 
     time_t inode_mtime = inode.i_mtime;
     struct tm *gmt_mtime = gmtime(&inode_mtime);
     char mtime[20];
-    strftime(mtime, 20, "%m/%d/%Y %H:%M:%S", gmt_mtime);
+    strftime(mtime, 20, "%m/%d/%y %H:%M:%S", gmt_mtime);
 
     time_t inode_atime = inode.i_atime;
     struct tm *gmt_atime = gmtime(&inode_atime);
     char atime[20];
-    strftime(atime, 20, "%m/%d/%Y %H:%M:%S", gmt_atime);
+    strftime(atime, 20, "%m/%d/%y %H:%M:%S", gmt_atime);
 
     unsigned int file_size = inode.i_size;
     unsigned int block_num = inode.i_blocks;
 
     printf("%o,%d,%d,%d,%s,%s,%s,%d,%d", mode, owner, group, link_count, ctime, mtime, atime, file_size, block_num);
     int k;
-    if (!is_link || (file_size < 60))
+    if (is_reg || is_dir)
     {
         
         for (k = 0; k < 15; k++)
@@ -107,10 +116,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
             printf(",%d", inode.i_block[k]);
         }
     }
-    else
-    {
-        printf(",");
-    }
+
     printf("\n");
 
     if (is_dir)
@@ -150,22 +156,30 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
     unsigned int table_id = cur_group.bg_inode_table;
     unsigned int offset = getBlockOffst(bitmap_id);
 
-    int map_size = super_block.s_inodes_per_group / 8;
+    int map_size = super_block.s_inodes_per_group / 8; //each byte is 8
     char *map = malloc(map_size * sizeof(char));
+
 
     pread(img_fd, map, map_size, offset);
 
-    int mask = 1;
+    
+
+    int mask = 0x1;
     int i;
     for (i = 0; i < map_size; i++)
     {
+
         char cur = map[i];
+        unsigned int map_test = (unsigned int) cur;
+//        printf("bitmap: %x\n", map_test);
         int j;
         for (j = 0; j < 8; j++)
         {
-            unsigned int is_used = cur & mask;
-            unsigned int inode_index = group_num * super_block.s_inodes_per_group + i * 8 + j + 1;
 
+            unsigned int is_used = cur & (mask << j);
+
+            unsigned int inode_index = group_num * super_block.s_inodes_per_group + i * 8 + j + 1;
+//            printf("inode index: %d, is used%d, mask: %x\n",inode_index, is_used, mask);
             if (is_used)
             {
                 inode_summary(inode_index, table_id, i * 8 + j + 1);
@@ -174,7 +188,7 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
             {
                 printf("IFREE,%d\n", inode_index);
             }
-            mask <<= 1;
+            mask = mask << 1;
         }
     }
 }
