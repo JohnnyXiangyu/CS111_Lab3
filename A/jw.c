@@ -13,7 +13,8 @@ unsigned int group_count; /* total number of groups */
 
 
 unsigned int getBlockOffst(unsigned int block_id) {
-    return SUPERBLOCK_OFFSET + (block_id - 1) * block_size;
+    unsigned int my_offset = block_id * block_size;
+    return my_offset;
 }
 
 
@@ -24,7 +25,7 @@ void getBlockSize() {
 
 void readSuperBlock() {
     /* read super block into global structure */
-    pread(img_fd, &super_block, 1024, SUPERBLOCK_OFFSET);
+    m_pread(img_fd, &super_block, 1024, SUPERBLOCK_OFFSET);
     getBlockSize();
 
     /* print super block summary */
@@ -51,7 +52,7 @@ void readGroupDescriptor() {
     unsigned int group_id = 0; /* index into the table */
     for (group_id = 0; group_id < group_count; group_id ++) {
         /* read group table entry */
-        pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_id);
+        m_pread(img_fd, &group_desc, 32, group_tab_offset + 32 * group_id);
 
         /* # of blocks in this group
          * full/mod
@@ -97,24 +98,24 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
         my_block_count = super_block.s_blocks_count - (group_count-1) * super_block.s_blocks_per_group;
     }
 
-    /* block id of first block of bitmap */
-    unsigned int bitmap_block_id = cur_group.bg_block_bitmap;
-    /* byte offset of first bitmap block*/
-    unsigned int bitmap_offset = getBlockOffst(bitmap_block_id);
-    /* variable of bitmap, always size 1 block */
-    char* bitmap = (char*) malloc(block_size * 1);
+    unsigned int bitmap_block_id = cur_group.bg_block_bitmap; /* block id of first block of bitmap */
+    unsigned int bitmap_offset = getBlockOffst(bitmap_block_id); /* byte offset of first bitmap block*/
+    char* bitmap = (char*) malloc(my_block_count * 1); /* variable of bitmap, always size 1 block */
+    
     /* read free block bitmap */
-    pread(img_fd, bitmap, block_size, bitmap_offset);
+    m_pread(img_fd, bitmap, my_block_count, bitmap_offset);
 
     /* first block id in this group */
     unsigned int first_block_id = super_block.s_first_data_block + super_block.s_blocks_per_group*group_id;
+    
     /* block id each bit corresponds to */
     unsigned int cur_block_id = first_block_id;
 
-    unsigned int byte_id, bit_id; /* indexes to bit map (each byte, each bit) */
-    /* loop each byte in the block */
-    for (byte_id = 0; byte_id < block_size; byte_id++) {
-        char cur_byte = bitmap[byte_id]; /* current byte in bitmap */
+    /* loop each byte and bit in the block */
+    unsigned int byte_id, bit_id;
+    for (byte_id = 0; byte_id < my_block_count; byte_id++) {
+        char cur_byte = bitmap[byte_id];
+        
         /* loop all 8 bits in the byte */
         for (bit_id = 0; bit_id < 8; bit_id ++) {
             char cur_bit = (cur_byte>>bit_id) & 1; /* current bit in bitmap */
@@ -122,11 +123,6 @@ void readBlockInfo(unsigned int group_id, struct ext2_group_desc cur_group) {
                 printf("BFREE,%d\n", cur_block_id);
             }
             cur_block_id ++;
-
-            /* if have already processed all blocks in this group */
-            /* TODO: is this necessary? */
-            if (cur_block_id >= first_block_id + my_block_count - 1)
-                break;
         }
     }
 
@@ -142,7 +138,7 @@ void readDirectories(unsigned int parent_inode, unsigned int block_id) {
     for (cur_offset = 0; cur_offset < block_size;) {
         /* read directory entry without name section */
         struct ext2_dir_entry cur_entry; /* entry in this iteration */
-        pread(img_fd, &cur_entry, sizeof(struct ext2_dir_entry), my_actual_offset + cur_offset);
+        m_pread(img_fd, &cur_entry, sizeof(struct ext2_dir_entry), my_actual_offset + cur_offset);
 
         if (cur_entry.inode != 0) {
             unsigned int my_full_length = cur_entry.rec_len; 

@@ -27,6 +27,16 @@ int m_open(const char *__file, int __oflag) {
         return rc;
 }
 
+void m_pread (int __fd, void *__buf, size_t __nbytes, __off_t __offset) {
+    long rc = pread(__fd, __buf, __nbytes, __offset);
+    if (rc < 0) { /* there's corruption */
+        fprintf(stderr, "CORRUPTION DETECTED pread() return negative: %s, exiting...\n", 
+            strerror(errno)
+        );
+        exit(2);
+    }
+}
+
 
 int main(int argc, char** argv) {
     /* open image file */

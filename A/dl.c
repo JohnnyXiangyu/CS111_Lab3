@@ -18,7 +18,7 @@ void readIndirectInfo(unsigned int indirect_table_id, unsigned int level, unsign
     unsigned int offset = getBlockOffst(indirect_table_id);
     unsigned int table_size = block_size / sizeof(__u32);
     unsigned int *ids = malloc(sizeof(__u32) * table_size);
-    pread(img_fd, ids, block_size, offset);
+    m_pread(img_fd, ids, block_size, offset);
 
     unsigned int i;
     for(i = 0; i < table_size; i++){
@@ -52,7 +52,7 @@ void inode_summary(unsigned int inode_number, unsigned int inode_table, unsigned
 
     struct ext2_inode inode;
 
-    pread(img_fd, &inode, super_block.s_inode_size, offset);
+    m_pread(img_fd, &inode, super_block.s_inode_size, offset);
 
     if(inode.i_mode == 0 || inode.i_links_count == 0){
         return;
@@ -163,10 +163,10 @@ void readInodeInfo(unsigned int group_num, struct ext2_group_desc cur_group)
     unsigned int offset = getBlockOffst(bitmap_id);
 
     int map_size = super_block.s_inodes_per_group / 8; //each byte is 8
-    char *map = malloc(map_size * sizeof(char));
+    char *map = (char *) malloc(block_size * sizeof(char));
 
 
-    pread(img_fd, map, map_size, offset);
+    m_pread(img_fd, map, block_size, offset);
 
     
 

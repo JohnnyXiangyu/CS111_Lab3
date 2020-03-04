@@ -1,7 +1,12 @@
-NAME
-ID
-EMAIL
+NAME: Xiangyu Wan, Xintong Liu
+EMAIL: wonjohnny@outlook.com, xtliu@g.ucla.edu
+ID: 805061659, 205140725
 
-Notes:
-    getBlockSize() is called in superblock processing routine
+FILES:
+    lab3a.c     source file including the main routine
+    lab3a.h     header file defining all the functions doing actual work
+    jw.c        source file by Xiangyu Wan
+    dl.c        source file by Xintong Liu
+    README      this file 
+    Makefile    makefile that supports default, clean and dist
     
