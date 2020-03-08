@@ -88,14 +88,14 @@ def free_inode_referenced():
             print(toprint)
 
 def inconsistent_link_count():
-    for d in directory:
-        parent = directory.get(str(d.parent_inode_number))
-        if parent is None:
-            continue
-            #what if the parent directory is invalid ?
-        else:
-            count = parent.dir_link_count
-            parent.dir_link_count = count + 1
+    # for d in directory:
+    #     parent = directory.get(str(d.parent_inode_number))
+    #     if parent is None:
+    #         continue
+    #         #what if the parent directory is invalid ?
+    #     else:
+    #         count = parent.dir_link_count
+    #         parent.dir_link_count = count + 1
     for i in inode_alloc.values():
         if i.link_count != i.dir_link_count:
             toprint = "INODE " + str(i.id) + " HAS " + str(i.dir_link_count) + " LINKS BUT LINKCOUNT IS " + str(i.link_count)
