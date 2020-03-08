@@ -15,32 +15,39 @@ directory
     parent_inode_number int
     name string  
 """
+
+
 class Inode:
-    def __init__(self):
-        self.id = 0
+    def __init__(self, entry):
+        self.id = int(entry[1])
         self.blocks = []
-        self.link_count = 0
+        self.link_count = int(entry[6])
         self.dir_link_count = 0
+        for i in range(12, 27):
+            if entry[i] != "0":
+                self.blocks.append(int(i))
+
 
 class Block:
     def __init__(self):
         self.id = 0
         self.inode_refs = []
-        self.indirection = ''
         self.allocated = True
 
+
 class Directory:
-    def __init__(self):
-        self.inode_number = 0
-        self.parent_inode_number = 0
-        self.name = ""
+    def __init__(self, entry):
+        self.inode_number = int(entry[3])
+        self.parent_inode_number = int(entry[1])
+        self.name = entry[6]
+
 
 class SuperBlock:
     def __init__(self, entry):
-        self.block_count = entry[1]
-        self.inode_count = entry[2]
-        self.block_size = entry[3]
-        self.inode_size = entry[4]
-        self.blocks_per_group = entry[5]
-        self.inodes_per_group = entry[6]
-        self.first_nonres_inode = entry[7]
+        self.block_count = int(entry[1])
+        self.inode_count = int(entry[2])
+        self.block_size = int(entry[3])
+        self.inode_size = int(entry[4])
+        self.blocks_per_group = int(entry[5])
+        self.inodes_per_group = int(entry[6])
+        self.first_nonres_inode = int(entry[7])

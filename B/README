@@ -26,17 +26,17 @@ Functions
     dot_dot()
 
 Class
-    inode 
+    Inode 
         id 
         blocks list 
         link_count int 
         dir_link_count int 
-    block 
+    Block 
         id
         inode_refs list of dictionary: {"inode": , "offset": ,"indirection": }
         indirection string (NONE, INDIRECT, DOUBLE INDIRECT, TRIPLE INDIRECT)
         allocated boolean
-    directory
+    Directory
         inode_number int 
         parent_inode_number int
         name string  
