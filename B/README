@@ -1,0 +1,36 @@
+Data strucures
+    inode_alloc dictionary
+    inode_freelist dictionary
+    blocks dictionary
+    block_freelist list
+    directory list 
+
+Functions
+    inconsistent_inode() 
+
+    invalid_block_number()
+    reserved_block()
+    unreferenced_block()
+    free_block_referenced()
+    duplicate_block()
+
+    inconsistent_link_count()
+    invalid_inode()
+    free_inode_referenced()
+    dot_dot()
+
+Class
+    inode 
+        id 
+        blocks list 
+        link_count int 
+        dir_link_count int 
+    block 
+        id
+        inode_refs list 
+        indirection string (NONE, INDIRECT, DOUBLE INDIRECT, TRIPLE INDIRECT)
+        allocated boolean
+    directory
+        inode_number int 
+        parent_inode_number int
+        name string  
