@@ -4,6 +4,7 @@ Data strucures
     blocks dictionary
     block_freelist list
     directory list 
+just to be clear, dictionaries' keys are all strings
 
 Global constants
     MAX_BLOCK_NUM - the maximum block id allowed
