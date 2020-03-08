@@ -5,6 +5,11 @@ Data strucures
     block_freelist list
     directory list 
 
+Global constants
+    MAX_BLOCK_NUM - the maximum block id allowed
+    RESERVED_BLOCK_ID - the maximum block id of reserved blocks
+    MAX_INODE_NUM - the maximum inode id allowed
+
 Functions
     inconsistent_inode() 
 
@@ -27,7 +32,7 @@ Class
         dir_link_count int 
     block 
         id
-        inode_refs list 
+        inode_refs list of dictionary: {"inode": , "offset": ,"indirection": }
         indirection string (NONE, INDIRECT, DOUBLE INDIRECT, TRIPLE INDIRECT)
         allocated boolean
     directory
