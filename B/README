@@ -32,7 +32,7 @@ Class
         dir_link_count int 
     block 
         id
-        inode_refs list of tuple: (inode_number, offset)
+        inode_refs list of dictionary: {"inode": , "offset": ,"indirection": }
         indirection string (NONE, INDIRECT, DOUBLE INDIRECT, TRIPLE INDIRECT)
         allocated boolean
     directory
