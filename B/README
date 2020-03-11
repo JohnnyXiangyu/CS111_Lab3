@@ -40,3 +40,6 @@ Class
         inode_number int 
         parent_inode_number int
         name string  
+
+group descriptor size: 32 bytes each
+

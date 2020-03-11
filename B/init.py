@@ -18,6 +18,7 @@ directory = []
 
 super_block = None
 
+
 if __name__ == '__main__':
     # parse argument
     version_msg = "%prog 114.514"
@@ -54,6 +55,9 @@ Output inconsistencies from a given report file."""
     if super_block == None:
         exit(2)
     
+    utils.MAX_BLOCK_NUM = super_block.block_count
+    utils.MAX_INODE_NUM = super_block.inode_count
+    
     # reserve some blocks and inodes
     for i in range(0, super_block.block_count):
         new_id = str(i)
@@ -66,9 +70,9 @@ Output inconsistencies from a given report file."""
             blocks[str(i)].allocated = False
             block_freelist.append(i)
         elif entry_type == "IFREE":
-            inode_freelist.update({str(i), utils.Inode(entry)})
+            inode_freelist.update({str(i): utils.Inode(entry)})
         elif entry_type == "INODE":
-            inode_alloc.update({str(i), utils.Inode(entry)})
+            inode_alloc.update({str(i): utils.Inode(entry)})
         elif entry_type == "DIRENT":
             directory.append(utils.Directory(entry))
         elif entry_type == "INDIRECT":
