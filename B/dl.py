@@ -5,14 +5,18 @@ import utils
 
 
 # Inode Consistency
-def inconsistent_inode(inode_alloc={}, inode_freelist={}):
+def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
     for id in range(1, utils.MAX_INODE_NUM+1):
         allocated_inode = inode_alloc.get(str(id))
-        free_inode = inode_freelist.get(str(id))
-        if allocated_inode is not None and free_inode is not None:
+        on_free_list = True
+        if (id in inode_freelist):
+            on_free_list = True
+        else:
+            on_free_list = False
+        if allocated_inode is not None and on_free_list:
             toprint = "ALLOCATED INODE " + str(id) + " ON FREELIST"
             print(toprint)
-        elif allocated_inode is None and free_inode is None:
+        elif allocated_inode is None and !on_free_list:
             toprint = "UNALLOCATED INODE " + str(id) + " NOT ON FREELIST"
             print(toprint)
             toprint = "INODE " + str(id) + " HAS 0 LINKS BUT LINKCOUNT IS 1"
@@ -26,7 +30,7 @@ def invalid_block_number(blocks={}):
         if b.id < 0 or b.id > utils.MAX_BLOCK_NUM:
             for t in b.inode_refs:
                 # t is a dictionary
-                toprint = "INVALID " + t["indirection"] + " " + str(
+                toprint = "INVALID " + t["indirection"] + " BLOCK " + str(
                     b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
                 print(toprint)
 
@@ -36,7 +40,7 @@ def reserved_block(blocks={}):
     for b in blocks.values():
         if b.id < utils.RESERVED_BLOCK_ID:
             for t in b.inode_refs:
-                toprint = "RESERVED " + t["indirection"] + " " + str(
+                toprint = "RESERVED " + t["indirection"] + " BLOCK " + str(
                     b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
                 print(toprint)
 
@@ -67,7 +71,7 @@ def duplicate_block(blocks={}):
         reference_count = len(b.inode_refs)
         if reference_count > 1:
             for t in b.inode_refs:
-                toprint = "DUPLICATED " + t["indirection"] + " " + str(
+                toprint = "DUPLICATED " + t["indirection"] + " BLOCK " + str(
                     b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
                 print(toprint)
 
