@@ -2,7 +2,8 @@ import utils
 import csv
 from optparse import OptionParser
 import sys
-import dl
+import dl 
+import math
 
 filename = ""
 report = []
@@ -87,6 +88,10 @@ Output inconsistencies from a given report file."""
                 temp_block.inode_refs.append({"inode": inode, "offset": offset, "indirection": indirection})
             except KeyError:
                 block_invalid.append({"id": int(bid), "inode": inode, "offset": offset, "indirection": indirection})
+        elif entry_type == "GROUP":
+            inode_table_id = int(entry[8])
+            inode_num_in_group = int(entry[3])
+            util.RESERVED_BLOCK_ID = inode_table_id + math.ceil(inode_num_in_group * super_block.inode_size / super_block.block_size)
 
 
     # update metadata in blocks
