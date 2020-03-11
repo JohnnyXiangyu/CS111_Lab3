@@ -4,4 +4,4 @@
 *.tar.gz
 __pycache__/
 *.csv
-test_data/*
+!test_data/*

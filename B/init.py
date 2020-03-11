@@ -1,3 +1,5 @@
+#! python3
+
 import utils
 import csv
 from optparse import OptionParser
