@@ -38,8 +38,8 @@ class Inode:
 
 
 class Block:
-    def __init__(self):
-        self.id = 0
+    def __init__(self, id):
+        self.id = id
         self.inode_refs = []
         self.allocated = True
 

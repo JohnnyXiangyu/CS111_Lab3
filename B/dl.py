@@ -6,17 +6,13 @@ import utils
 
 # Inode Consistency
 def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
-    for id in range(utils.FIRST_INODE_NUM, utils.MAX_INODE_NUM+1):
-        allocated_inode = inode_alloc.get(str(id))
-        on_free_list = True
-        if (id in inode_freelist):
-            on_free_list = True
-        else:
-            on_free_list = False
-        if allocated_inode is not None and on_free_list:
-            toprint = "ALLOCATED INODE " + str(id) + " ON FREELIST"
+    for allocated_inode in inode_alloc.values():
+        if allocated_inode.id in inode_freelist:
+            toprint = "ALLOCATED INODE " + str(allocated_inode.id) + " ON FREELIST"
             print(toprint)
-        elif allocated_inode is None and not on_free_list:
+    
+    for id in range(utils.FIRST_INODE_NUM, utils.MAX_INODE_NUM+1):
+        if inode_alloc.get(str(id)) == None and id not in inode_freelist:
             toprint = "UNALLOCATED INODE " + str(id) + " NOT ON FREELIST"
             print(toprint)
             toprint = "INODE " + str(id) + " HAS 0 LINKS BUT LINKCOUNT IS 1"
@@ -28,7 +24,7 @@ def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
 def invalid_block_number(blocks_invalid=[]):
     for b in blocks_invalid:
         # b is a dictionary
-        toprint = "INVALID " + b["indirection"] + " BLOCK " + str(b["id"]) + " IN INODE " + str(b["inode"]) + " AT OFFSET " + str(b["offset"])
+        toprint = "INVALID " + b["indirection"] + " " + str(b["id"]) + " IN INODE " + str(b["inode"]) + " AT OFFSET " + str(b["offset"])
         print(toprint)
 
 
@@ -37,7 +33,7 @@ def reserved_block(blocks={}):
     for b in blocks.values():
         if b.id < utils.RESERVED_BLOCK_ID and b.id > 0:
             for t in b.inode_refs:
-                toprint = "RESERVED " + t["indirection"] + " BLOCK " + str(
+                toprint = "RESERVED " + t["indirection"] + " " + str(
                     b.id) + " IN INODE " + str(t["inode"]) + " AT OFFSET " + str(t["offset"])
                 print(toprint)
 
@@ -46,7 +42,7 @@ def reserved_block(blocks={}):
 def unreferenced_block(blocks={}):
     for b in blocks.values():
         reference_count = len(b.inode_refs)
-        if reference_count == 0 and b.allocated and b.id != 0:
+        if reference_count == 0 and b.allocated and b.id != 0 and b.id >= utils.RESERVED_BLOCK_ID:
             # if not in free list and not being referenced
             toprint = "UNREFERENCED BLOCK " + str(b.id)
             print(toprint)
@@ -72,7 +68,7 @@ def duplicate_block(blocks={}):
         reference_count = len(b.inode_refs)
         if reference_count > 1:
             for t in b.inode_refs:
-                toprint = "DUPLICATED " + t["indirection"] + " BLOCK " + str(
+                toprint = "DUPLICATE " + t["indirection"] + " " + str(
                     b.id) + " IN INODE " + str(t["inode"]) + " AT OFFSET " + str(t["offset"])
                 print(toprint)
 
@@ -82,15 +78,15 @@ def duplicate_block(blocks={}):
 
 def invalid_inode(directory=[]):
     for d in directory:
-        if d.inode_number < 1 and d.inode_number > utils.MAX_INODE_NUM:
-            toprint = "DIRECTORY INODE" + d.parent_inode_number + \
-                " NAME " + d.name + " INVALIDE INODE " + d.inode_number
+        if d.inode_number < 1 or d.inode_number > utils.MAX_INODE_NUM:
+            toprint = "DIRECTORY INODE " + str(d.parent_inode_number) + \
+                " NAME " + d.name + " INVALID INODE " + str(d.inode_number)
             print(toprint)
 
 
-def free_inode_referenced(directory=[], inode_freelist=[]):
+def free_inode_referenced(directory=[], inode_freelist=[], inode_alloc={}):
     for d in directory:
-        if d.inode_number in inode_freelist:
+        if d.inode_number in inode_freelist and str(d.inode_number) not in inode_alloc.keys():
             toprint = "DIRECTORY INODE " + \
                 str(d.parent_inode_number) + " NAME " + d.name + \
                 " UNALLOCATED INODE " + str(d.inode_number)
@@ -115,13 +111,13 @@ def inconsistent_link_count(inode_alloc={}):
 
 def dot_dot(directory=[]):
     for d in directory:
-        if d.name == '.':
+        if d.name == "'.'":
             if d.inode_number != d.parent_inode_number:
                 toprint = "DIRECTORY INODE " + str(d.parent_inode_number) + " NAME " + d.name + " LINK TO INODE " + str(
                     d.inode_number) + " SHOULD BE " + str(d.parent_inode_number)
                 print(toprint)
-        if d.name == '..':
-            if d.inode_number == 2:
+        if d.name == "'..'":
+            if d.parent_inode_number == 2:
                 if d.parent_inode_number != d.inode_number:
                     toprint = "DIRECTORY INODE " + \
                         str(d.parent_inode_number) + " NAME " + d.name + \

@@ -11,7 +11,8 @@ filename = ""
 report = []
 
 # stringify indirection level
-indirection_str = ["INDIRECT", "DOUBLE INDIRECT", "TRIPLE INDIRECT"]
+indirection_str = ["INDIRECT BLOCK", "DOUBLE INDIRECT BLOCK", "TRIPLE INDIRECT BLOCK"]
+indirection_offset = ["12", "268", "65804"]
 
 # gobal data structures
 inode_alloc = {}
@@ -67,7 +68,7 @@ Output inconsistencies from a given report file."""
     # reserve some blocks and inodes
     for i in range(0, super_block.block_count):
         new_id = str(i)
-        blocks.update({new_id: utils.Block()})
+        blocks.update({new_id: utils.Block(i)})
     
     # construct raw structures
     for entry in report:
@@ -99,14 +100,20 @@ Output inconsistencies from a given report file."""
 
     # update metadata in blocks
     for inode in inode_alloc.values():
-        for i in range(0, 12):
+        for i in range(0, 15):
             block_id = inode.blocks[i]
+            indirect_type = ""
+            offset = str(i)
+            if i > 11:
+                indirect_type = indirection_str[i - 12]
+                offset = indirection_offset[i - 12]
+            else:
+                indirect_type = "BLOCK"
             try:
                 temp_block = blocks[str(block_id)]
-                temp_block.inode_refs.append({"inode": inode.id, "offset": i, "indirection": "DIRECT"})
+                temp_block.inode_refs.append({"inode": inode.id, "offset": offset, "indirection": indirect_type})
             except KeyError:
-                block_invalid.append({"id": block_id, "inode": inode.id, "offset": i, "indirection": "DIRECT"})
-            
+                block_invalid.append({"id": block_id, "inode": inode.id, "offset": offset, "indirection": indirect_type})
     
     # update reference count in inode
     for dire in directory:
@@ -119,7 +126,7 @@ Output inconsistencies from a given report file."""
     dl.dot_dot(directory=directory)
     dl.duplicate_block(blocks=blocks)
     dl.free_block_referenced(block_freelist=block_freelist, blocks=blocks)
-    dl.free_inode_referenced(directory=directory, inode_freelist=inode_freelist)
+    dl.free_inode_referenced(directory=directory, inode_freelist=inode_freelist, inode_alloc=inode_alloc)
     dl.inconsistent_inode(inode_alloc, inode_freelist)
     dl.inconsistent_link_count(inode_alloc=inode_alloc)
     dl.invalid_block_number(blocks_invalid=block_invalid)
