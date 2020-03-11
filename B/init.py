@@ -37,6 +37,7 @@ Output inconsistencies from a given report file."""
     (opts, args) = parser.parse_args(sys.argv[1:])
 
     if len(args) != 1:
+        print(args)
         sys.stderr.write("Error multiple file names given!\n")
         exit(1)
     
