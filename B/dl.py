@@ -25,14 +25,11 @@ def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
 # Block Consistency
 
 # checking invalid blocks - block id smaller than 0 and greater than max
-def invalid_block_number(blocks={}):
-    for b in blocks.values():
-        if b.id < 0 or b.id > utils.MAX_BLOCK_NUM:
-            for t in b.inode_refs:
-                # t is a dictionary
-                toprint = "INVALID " + t["indirection"] + " BLOCK " + str(
-                    b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
-                print(toprint)
+def invalid_block_number(blocks_invalid[]):
+    for b in blocks_invalid:
+        # b is a dictionary
+        toprint = "INVALID " + b["indirection"] + " BLOCK " + b["id"] + " IN INODE " + b["inode"] + " AT OFFSET " + b["offset"]
+        print(toprint)
 
 
 # checking whether the block is reserved - reserved block has id from 1 to RESERVED_BLOCK_ID
