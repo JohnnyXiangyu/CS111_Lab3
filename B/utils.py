@@ -32,8 +32,7 @@ class Inode:
         self.link_count = int(entry[6])
         self.dir_link_count = 0
         for i in range(12, 27):
-            if entry[i] != "0":
-                self.blocks.append(int(i))
+            self.blocks.append(entry[i])
 
 
 class Block:
