@@ -17,6 +17,14 @@ directory
 """
 
 
+# maximum blocks in the fs
+MAX_BLOCK_NUM = 0
+# block number of the first non-reserved block
+RESERVED_BLOCK_ID = 0
+# maximum of inodes in the fs
+MAX_INODE_NUM = 0 
+
+
 class Inode:
     def __init__(self, entry):
         self.id = int(entry[1])
