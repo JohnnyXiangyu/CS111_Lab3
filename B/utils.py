@@ -23,6 +23,8 @@ MAX_BLOCK_NUM = 0
 RESERVED_BLOCK_ID = 0
 # maximum of inodes in the fs
 MAX_INODE_NUM = 0 
+# first valid inode number
+FIRST_INODE_NUM = 0
 
 
 class Inode:

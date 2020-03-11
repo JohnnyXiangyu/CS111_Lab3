@@ -60,6 +60,7 @@ Output inconsistencies from a given report file."""
     
     utils.MAX_BLOCK_NUM = super_block.block_count
     utils.MAX_INODE_NUM = super_block.inode_count
+    utils.FIRST_INODE_NUM = super_block.first_nonres_inode
     
     # reserve some blocks and inodes
     for i in range(0, super_block.block_count):
@@ -91,7 +92,7 @@ Output inconsistencies from a given report file."""
         elif entry_type == "GROUP":
             inode_table_id = int(entry[8])
             inode_num_in_group = int(entry[3])
-            util.RESERVED_BLOCK_ID = inode_table_id + math.ceil(inode_num_in_group * super_block.inode_size / super_block.block_size)
+            utils.RESERVED_BLOCK_ID = inode_table_id + math.ceil(inode_num_in_group * super_block.inode_size / super_block.block_size)
 
 
     # update metadata in blocks
@@ -115,11 +116,11 @@ Output inconsistencies from a given report file."""
     
     dl.dot_dot(directory=directory)
     dl.duplicate_block(blocks=blocks)
-    dl.free_block_referenced(block_freelist=block_freelist)
-    dl.free_inode_referenced(directory=directory)
+    dl.free_block_referenced(block_freelist=block_freelist, blocks=blocks)
+    dl.free_inode_referenced(directory=directory, inode_freelist=inode_freelist)
     dl.inconsistent_inode(inode_alloc, inode_freelist)
     dl.inconsistent_link_count(inode_alloc=inode_alloc)
-    dl.invalid_block_number(blocks=blocks)
+    dl.invalid_block_number(blocks_invalid=block_invalid)
     dl.invalid_inode(directory=directory)
     dl.reserved_block(blocks=blocks)
     dl.unreferenced_block(blocks=blocks)

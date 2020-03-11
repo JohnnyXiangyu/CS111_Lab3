@@ -6,7 +6,7 @@ import utils
 
 # Inode Consistency
 def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
-    for id in range(1, utils.MAX_INODE_NUM+1):
+    for id in range(utils.FIRST_INODE_NUM, utils.MAX_INODE_NUM+1):
         allocated_inode = inode_alloc.get(str(id))
         on_free_list = True
         if (id in inode_freelist):
@@ -16,7 +16,7 @@ def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
         if allocated_inode is not None and on_free_list:
             toprint = "ALLOCATED INODE " + str(id) + " ON FREELIST"
             print(toprint)
-        elif allocated_inode is None and !on_free_list:
+        elif allocated_inode is None and not on_free_list:
             toprint = "UNALLOCATED INODE " + str(id) + " NOT ON FREELIST"
             print(toprint)
             toprint = "INODE " + str(id) + " HAS 0 LINKS BUT LINKCOUNT IS 1"
@@ -25,20 +25,20 @@ def inconsistent_inode(inode_alloc={}, inode_freelist=[]):
 # Block Consistency
 
 # checking invalid blocks - block id smaller than 0 and greater than max
-def invalid_block_number(blocks_invalid[]):
+def invalid_block_number(blocks_invalid=[]):
     for b in blocks_invalid:
         # b is a dictionary
-        toprint = "INVALID " + b["indirection"] + " BLOCK " + b["id"] + " IN INODE " + b["inode"] + " AT OFFSET " + b["offset"]
+        toprint = "INVALID " + b["indirection"] + " BLOCK " + str(b["id"]) + " IN INODE " + str(b["inode"]) + " AT OFFSET " + str(b["offset"])
         print(toprint)
 
 
 # checking whether the block is reserved - reserved block has id from 1 to RESERVED_BLOCK_ID
 def reserved_block(blocks={}):
     for b in blocks.values():
-        if b.id < utils.RESERVED_BLOCK_ID:
+        if b.id < utils.RESERVED_BLOCK_ID and b.id > 0:
             for t in b.inode_refs:
                 toprint = "RESERVED " + t["indirection"] + " BLOCK " + str(
-                    b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
+                    b.id) + " IN INODE " + str(t["inode"]) + " AT OFFSET " + str(t["offset"])
                 print(toprint)
 
 
@@ -46,7 +46,7 @@ def reserved_block(blocks={}):
 def unreferenced_block(blocks={}):
     for b in blocks.values():
         reference_count = len(b.inode_refs)
-        if reference_count == 0 and b.allocated:
+        if reference_count == 0 and b.allocated and b.id != 0:
             # if not in free list and not being referenced
             toprint = "UNREFERENCED BLOCK " + str(b.id)
             print(toprint)
@@ -54,22 +54,26 @@ def unreferenced_block(blocks={}):
 # checking free blocks being referenced
 
 
-def free_block_referenced(block_freelist={}):
-    for b in block_freelist:
+def free_block_referenced(block_freelist=[], blocks={}):
+    for b_id in block_freelist:
+        b = blocks[str(b_id)]
         reference_count = len(b.inode_refs)
         if reference_count > 0:
             toprint = "ALLOCATED BLOCK " + str(b.id) + " ON FREELIST"
+            print(toprint)
 
 # checking if the block is referenced more than once
 
 
 def duplicate_block(blocks={}):
     for b in blocks.values():
+        if b.id == 0:
+            continue
         reference_count = len(b.inode_refs)
         if reference_count > 1:
             for t in b.inode_refs:
                 toprint = "DUPLICATED " + t["indirection"] + " BLOCK " + str(
-                    b.id) + " IN INODE " + t["inode"] + " AT OFFSET " + t["offset"]
+                    b.id) + " IN INODE " + str(t["inode"]) + " AT OFFSET " + str(t["offset"])
                 print(toprint)
 
 
@@ -84,11 +88,9 @@ def invalid_inode(directory=[]):
             print(toprint)
 
 
-def free_inode_referenced(directory=[]):
+def free_inode_referenced(directory=[], inode_freelist=[]):
     for d in directory:
-        # d.inode number could be invalid
-        referenced_inode = directory.get(str(d.inode_number))
-        if referenced_inode is None:
+        if d.inode_number in inode_freelist:
             toprint = "DIRECTORY INODE " + \
                 str(d.parent_inode_number) + " NAME " + d.name + \
                 " UNALLOCATED INODE " + str(d.inode_number)
